@@ -11,20 +11,31 @@ export default function Home() {
 			return;
 		}
 
+		let registration;
 		navigator.serviceWorker
 			.register("/sw.js")
-			.then((registration) => {
-				console.log(
-					"Service Worker registration successful with scope: ",
-					registration.scope
-				)
-
-				Notification.requestPermission()
-					.then(r => {
-						console.log("Permissions: ", r)
-					})
+			.then(r => { registration = r })
+			// You should not ask for permissions imediately upon a user visiting!
+			.then(Notification.requestPermission)
+			.then(p => {
+				if(p == 'denied')
+					throw Error("Permission not given.");
 			})
-			.catch((err) => console.error("Service Worker registration failed: ", err));
+			.then(() => (registration.pushManager.subscribe({
+				userVisibleOnly: true,
+				applicationServerKey: urlBase64ToUint8Array(
+					'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U',
+				),
+			})))
+			.then((pushSubscription) => {
+				console.log(
+					'Received PushSubscription: ',
+					JSON.stringify(pushSubscription),
+				);
+
+				return pushSubscription;
+			})
+			.catch(console.error)
 	}, [])
 
 
